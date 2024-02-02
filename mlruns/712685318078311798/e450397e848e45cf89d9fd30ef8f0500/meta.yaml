@@ -1,0 +1,15 @@
+artifact_uri: file:///home/ubuntu/notebooks/mlruns/712685318078311798/e450397e848e45cf89d9fd30ef8f0500/artifacts
+end_time: 1706887332102
+entry_point_name: ''
+experiment_id: '712685318078311798'
+lifecycle_stage: active
+run_id: e450397e848e45cf89d9fd30ef8f0500
+run_name: thundering-trout-460
+run_uuid: e450397e848e45cf89d9fd30ef8f0500
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1706887325402
+status: 3
+tags: []
+user_id: ubuntu

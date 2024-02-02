@@ -1,0 +1,6 @@
+artifact_location: file:///home/ubuntu/notebooks/mlruns/712685318078311798
+creation_time: 1706887221256
+experiment_id: '712685318078311798'
+last_update_time: 1706887221256
+lifecycle_stage: active
+name: random-forest-hyperopt

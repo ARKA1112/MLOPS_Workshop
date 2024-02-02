@@ -1,0 +1,15 @@
+artifact_uri: file:///home/ubuntu/notebooks/mlruns/712685318078311798/c840014e38d84f9c996c27b818c6f140/artifacts
+end_time: 1706887332982
+entry_point_name: ''
+experiment_id: '712685318078311798'
+lifecycle_stage: active
+run_id: c840014e38d84f9c996c27b818c6f140
+run_name: gregarious-loon-25
+run_uuid: c840014e38d84f9c996c27b818c6f140
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1706887332104
+status: 4
+tags: []
+user_id: ubuntu
