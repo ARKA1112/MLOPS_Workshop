@@ -5,3 +5,4 @@ download
 create_s3_bucket_block.py
 extra_trees_reg.bin
 4_deployment/web service/extra_trees_reg.bin
+models/extra_trees_reg.bin
