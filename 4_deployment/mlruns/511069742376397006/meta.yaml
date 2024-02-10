@@ -1,0 +1,6 @@
+artifact_location: file:///home/susearc/Documents/github/MLOPS_Workshop/4_deployment/mlruns/511069742376397006
+creation_time: 1707578295166
+experiment_id: '511069742376397006'
+last_update_time: 1707578295166
+lifecycle_stage: active
+name: nyc_taxi_exp_4.2_deploy_2
