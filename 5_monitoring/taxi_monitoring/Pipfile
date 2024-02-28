@@ -1,0 +1,22 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+prefect = "*"
+tqdm = "*"
+requests = "*"
+joblib = "*"
+pyarrow = "*"
+psycopg = "*"
+psycopg_binary = "*"
+evidently = "*"
+pandas = "*"
+numpy = "*"
+scikit-learn = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.11" 
