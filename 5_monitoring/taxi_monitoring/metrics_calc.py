@@ -1,68 +1,66 @@
 import datetime
 import time
 import random
-import logging
+import logging 
 import uuid
 import pytz
 import pandas as pd
 import io
 import psycopg
 import joblib
+
 from prefect import task, flow
 
 from evidently.report import Report
 from evidently import ColumnMapping
-from evidently.metrics import ColumnDriftMetric, DatasetDriftMetric, DatasetMissingValuesMetric
+from evidently.metrics import ColumnDriftMetric, DatasetDriftMetric, DatasetMissingValuesMetric, ColumnQuantileMetric
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s]: %(message)s")
-
 
 SEND_TIMEOUT = 10
 rand = random.Random()
 
-
 create_table_statement = """
 drop table if exists real_metrics;
-create table dummy_metrics(
-        timestamp timestamp,
-        prediction_drift float,
-        num_drifted_columns integer,
-		share_missing_values float
+create table real_metrics(
+	timestamp timestamp,
+	prediction_drift float,
+	num_drifted_columns integer,
+	share_missing_values float
 )
 """
 
-with open("lgb.pkl", 'rb') as f_in:
+reference_data = pd.read_parquet('https://d37ci6vzurychx.cloudfront.net/trip-data/green_tripdata_2023-01.parquet')
+with open('lin_reg.bin', 'rb') as f_in:
 	model = joblib.load(f_in)
 
-raw_data = pd.read_parquet('https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2022-01.parquet')
+raw_data = pd.read_parquet('https://d37ci6vzurychx.cloudfront.net/trip-data/green_tripdata_2023-03.parquet')
 
-begin = datetime.datetime(2022, 2, 1, 0, 0)
+begin = datetime.datetime(2023, 3, 1, 0, 0)
 num_features = ['passenger_count', 'trip_distance', 'fare_amount', 'total_amount']
-cat_features = ['PULocationID','DOLocationID']
-
+cat_features = ['PULocationID', 'DOLocationID']
 column_mapping = ColumnMapping(
-	prediction = "prediction",
-	numerical_features = num_features,
-	categorical_features = cat_features,
-	target = None
+    prediction='prediction',
+    numerical_features=num_features,
+    categorical_features=cat_features,
+    target=None
 )
 
 report = Report(metrics = [
-	ColumnDriftMetric(column_name = "prediciton"),
-	DatasetDriftMetric(),
-	DatasetMissingValuesMetric()
+    ColumnDriftMetric(column_name='prediction'),
+    DatasetDriftMetric(),
+    DatasetMissingValuesMetric(),
+	ColumnQuantileMetric(column_name='fare_amount',quantile=0.5)
 ])
-
 
 @task
 def prep_db():
-    with psycopg.connect("host=localhost port=5432 user=postgres password=example", autocommit=True) as conn:
-        res = conn.execute("SELECT 1 FROM pg_database WHERE datname='test'")
-        if len(res.fetchall()) == 0:
-            conn.execute("create database test;")
-        with psycopg.connect("host=localhost port=5432 dbname=test user=postgres password=example") as conn:
-            conn.execute(create_table_statement)
-
+	with psycopg.connect("host=localhost port=5432 user=postgres password=example", autocommit=True) as conn:
+		res = conn.execute("SELECT 1 FROM pg_database WHERE datname='test'")
+		if len(res.fetchall()) == 0:
+			conn.execute("create database test;")
+		with psycopg.connect("host=localhost port=5432 dbname=test user=postgres password=example") as conn:
+			conn.execute(create_table_statement)
 
 @task
 def calculate_metrics_postgresql(curr, i):
@@ -71,7 +69,7 @@ def calculate_metrics_postgresql(curr, i):
 
 	#current_data.fillna(0, inplace=True)
 	current_data['prediction'] = model.predict(current_data[num_features + cat_features].fillna(0))
-
+	reference_data['prediction'] = model.predict(reference_data[num_features + cat_features].fillna(0))
 	report.run(reference_data = reference_data, current_data = current_data,
 		column_mapping=column_mapping)
 
@@ -82,7 +80,7 @@ def calculate_metrics_postgresql(curr, i):
 	share_missing_values = result['metrics'][2]['result']['current']['share_of_missing_values']
 
 	curr.execute(
-		"insert into dummy_metrics(timestamp, prediction_drift, num_drifted_columns, share_missing_values) values (%s, %s, %s, %s)",
+		"insert into real_metrics(timestamp, prediction_drift, num_drifted_columns, share_missing_values) values (%s, %s, %s, %s)",
 		(begin + datetime.timedelta(i), prediction_drift, num_drifted_columns, share_missing_values)
 	)
 
@@ -91,9 +89,9 @@ def batch_monitoring_backfill():
 	prep_db()
 	last_send = datetime.datetime.now() - datetime.timedelta(seconds=10)
 	with psycopg.connect("host=localhost port=5432 dbname=test user=postgres password=example", autocommit=True) as conn:
-		for i in range(0, 100):
+		for i in range(0, 27):
 			with conn.cursor() as curr:
-				calculate_metrics_postgresql(curr)
+				calculate_metrics_postgresql(curr, i)
 
 			new_send = datetime.datetime.now()
 			seconds_elapsed = (new_send - last_send).total_seconds()
